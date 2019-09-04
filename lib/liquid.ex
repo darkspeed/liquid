@@ -1,18 +1,6 @@
 defmodule Liquid do
   @moduledoc """
-  Documentation for Liquid.
+  Pluggable proxy obfuscation designed to counteract deep packet 
+  inspection and advanced fingerprinting techniques.
   """
-
-  @doc """
-  Hello world.
-
-  ## Examples
-
-      iex> Liquid.hello()
-      :world
-
-  """
-  def hello do
-    :world
-  end
 end
