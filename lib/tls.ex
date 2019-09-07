@@ -43,10 +43,7 @@ defmodule Liquid.TLS do
       end
     end
 
-    defp error(field, description), do: {:error, [], "Error parsing field '#{field}': #{description}"}
-
-    # TODO: Pattern matching order? Might run into issues with the 'undefined' field. Test to determine behavior.
-    defp parse(_name, {:error, _, _ } = error), do: error
+    def error(field, description), do: {:error, [], "Error parsing field '#{field}': #{description}"}
 
     # TODO: Decide on how to name these so defmacro, defp, and def don't collide.
     def pub_parse(type, string) do
