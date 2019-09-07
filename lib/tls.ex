@@ -16,11 +16,10 @@ defmodule Liquid.TLS do
 
         @behaviour Request
         defoverridable Request
-
-        @type request_parser() :: {atom(), Keyword.t(), String.t()}
-
       end
     end
+
+    @type request_parser() :: {atom(), Keyword.t(), String.t()}
 
     @doc """
     Constructs a request field function (RFF). Given the field name, `field` will generate
@@ -40,28 +39,25 @@ defmodule Liquid.TLS do
     defmacro field(name, do: body) do
       quote do
         body = unquote(body)
-        defp parse(unquote(:"#{name}"), {:ok, _value, stream} = parse), do: unquote(body)
+        def parse(unquote(:"#{name}"), {:ok, _value, stream} = parse), do: unquote(body)
       end
     end
 
-    defp error(field, description), do: {:error, nil, "Error parsing field '#{field}': #{description}"}
+    defp error(field, description), do: {:error, [], "Error parsing field '#{field}': #{description}"}
 
-    # TODO: Pattern matching order?
+    # TODO: Pattern matching order? Might run into issues with the 'undefined' field. Test to determine behavior.
     defp parse(_name, {:error, _, _ } = error), do: error
 
     # TODO: Decide on how to name these so defmacro, defp, and def don't collide.
     def pub_parse(type, string) do
-      Enum.reduce(type.fields(), {:ok, nil, string}, fn field, parser ->
-        type.parse(field, parser) end )
+      Enum.reduce type.fields(), {:ok, [], string}, fn field, parser ->
+        case parser do
+          {:ok, current, _} ->
+            {status, parse, stream} = type.parse(field, parser)
+            {status, Keyword.merge(current, parse), stream}
+          {:error, _, _} -> parser
+        end
+      end
     end
-  end
-
-  defmodule TestReq do
-    use Liquid.TLS.Request
-
-    field :test do
-      1 + 1
-    end
-
   end
 end
