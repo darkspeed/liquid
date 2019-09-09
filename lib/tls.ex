@@ -43,18 +43,28 @@ defmodule Liquid.TLS do
       end
     end
 
-    def error(field, description), do: {:error, [], "Error parsing field '#{field}': #{description}"}
+    def parse(:record_layer, {:ok, _value, stream}) do
+      {header, request} = :lists.split(4, stream)
+    end
 
-    # TODO: Decide on how to name these so defmacro, defp, and def don't collide.
-    def pub_parse(type, string) do
-      Enum.reduce type.fields(), {:ok, [], string}, fn field, parser ->
+    def parse(type, string) do
+      dispatch = fn field, parser ->
         case parser do
           {:ok, current, _} ->
             {status, parse, stream} = type.parse(field, parser)
             {status, Keyword.merge(current, parse), stream}
-          {:error, _, _} -> parser
+
+          {:error, _, _} ->
+            parser
         end
       end
+
+      parse(:record_layer, {:ok, [], string})
+      |> (&Enum.reduce(type.fields(), &1, dispatch)).()
     end
+
+    def error(field, description),
+      do: {:error, [], "Error parsing field '#{field}': #{description}"}
+
   end
 end
