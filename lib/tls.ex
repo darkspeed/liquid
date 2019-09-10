@@ -31,7 +31,8 @@ defmodule Liquid.TLS do
     the appropriate `parse/2` function signature using the given `do` block as an implementation.
 
     Within the `do` block implementation, the remaining input stream is accesible via the arguemnt
-    `stream`.
+    `stream` by default. If you would like to change thhe name of the argument, do so by passing in
+    an atom for `argument`.
 
     ## Example
 
@@ -51,7 +52,8 @@ defmodule Liquid.TLS do
       {header, request} = :lists.split(4, stream)
     end
 
-    def parse(type, string) do
+    @spec parse(term, Keyword.t, String.t) :: parser()
+    def parse(type, opts \\ [], string) do
       dispatch = fn field, parser ->
         case parser do
           {:ok, current, _} ->
