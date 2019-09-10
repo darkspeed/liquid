@@ -42,7 +42,6 @@ defmodule Liquid.TLS do
     ## Example
 
       field :one_byte do
-        {the_byte, rest} = :binary
       end
 
     """
@@ -63,6 +62,7 @@ defmodule Liquid.TLS do
     end
 
     @spec parse(term, parser(), input()) :: parser() def parse(type, opts \\ [], string) do
+    def parse(type, _opts \\ [], string) do
       dispatch = fn field, parser ->
         case parser do
           {:ok, current, _} ->
