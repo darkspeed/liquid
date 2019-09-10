@@ -22,14 +22,14 @@ defmodule Liquid.TLS do
     @typedoc """
     Represents the remaining unparsed request.
     """
-    @type input() :: bytes()
+    @type input() :: binary()
 
     @typedoc """
     Represents a request parser. For parser combinators, this type more closely
     represents a 'parse result' rather than a 'parser object' that may be found
     in object-oriented libraries.
     """
-    @type parser() :: {atom(), Keyword.t(), [byte()]}
+    @type parser() :: {atom(), keyword(), input()}
 
     @doc """
     Constructs a parser combinator function for the given field name. `field` will generate
@@ -42,23 +42,27 @@ defmodule Liquid.TLS do
     ## Example
 
       field :one_byte do
-        # Consume one byte of input.
+        {the_byte, rest} = :binary
       end
 
     """
     defmacro field(name, input \\ :stream, do: body) do
       quote do
         body = unquote(body)
-        def parse(unquote(:"#{name}"), {:ok, _, unquote(to_string(argument))} = parse), do: unquote(body)
+        def parse(unquote(:"#{name}"), {:ok, _, unquote(to_string(input))} = parse), do: unquote(body)
       end
     end
 
     def parse(:record_layer, {:ok, _value, stream}) do
-      {header, request} = :lists.split(4, stream)
+      <<handshake_byte, major, minor, length :: size(16), request :: binary>> = stream
+      case {handshake_byte, major, minor} do
+        {0x16, 3, 1} -> {:ok, [record_layer: [version: {major, minor}, length: length]], request}
+        {0x16, _, _} -> error :record_layer, "TLS Version 1.3 is required."
+        _ -> "Malformed record layer."
+      end
     end
 
-    @spec parse(term, Keyword.t, String.t) :: parser()
-    def parse(type, opts \\ [], string) do
+    @spec parse(term, parser(), input()) :: parser() def parse(type, opts \\ [], string) do
       dispatch = fn field, parser ->
         case parser do
           {:ok, current, _} ->
