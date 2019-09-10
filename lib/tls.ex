@@ -37,7 +37,7 @@ defmodule Liquid.TLS do
 
     Within the `do` block implementation, the remaining input stream is accesible via the arguemnt
     `stream` by default. If you would like to change thhe name of the argument, do so by passing in
-    an atom for `argument`.
+    an atom for `input`.
 
     ## Example
 
@@ -46,7 +46,7 @@ defmodule Liquid.TLS do
       end
 
     """
-    defmacro field(name, argument \\ :stream, do: body) do
+    defmacro field(name, input \\ :stream, do: body) do
       quote do
         body = unquote(body)
         def parse(unquote(:"#{name}"), {:ok, _, unquote(to_string(argument))} = parse), do: unquote(body)
