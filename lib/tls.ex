@@ -6,9 +6,6 @@ defmodule Liquid.TLS do
   """
 
   defmodule Request do
-    @callback type() :: {atom(), byte()}
-    @callback fields() :: [atom()]
-
     @doc false
     defmacro __using__(_opts) do
       quote do
@@ -19,27 +16,40 @@ defmodule Liquid.TLS do
       end
     end
 
-    @type request_parser() :: {atom(), Keyword.t(), String.t()}
+    @callback type() :: {atom(), byte()}
+    @callback fields() :: [atom()]
+
+    @typedoc """
+    Represents the remaining unparsed request.
+    """
+    @type input() :: bytes()
+
+    @typedoc """
+    Represents a request parser. For parser combinators, this type more closely
+    represents a 'parse result' rather than a 'parser object' that may be found
+    in object-oriented libraries.
+    """
+    @type parser() :: {atom(), Keyword.t(), [byte()]}
 
     @doc """
-    Constructs a request field function (RFF). Given the field name, `field` will generate
-    the appropriate `parse/2` function signature.
+    Constructs a parser combinator function for the given field name. `field` will generate
+    the appropriate `parse/2` function signature using the given `do` block as an implementation.
 
-    RFFs are "modular" functions responsible for parsing a particular field within a TLS request.
-    RFFs must implement the signature:
+    Within the `do` block implementation, the remaining input stream is accesible via the arguemnt
+    `stream` by default. If you would like to change thhe name of the argument, do so by passing in
+    an atom for `input`.
 
-    ```parse(atom(), request_parser()) :: request_parser()```
+    ## Example
 
-    Where `request_parser()` is a 3-tuple containing an :ok/:error atom, the current parsed request,
-    and the remaining string to be parsed.
+      field :one_byte do
+        # Consume one byte of input.
+      end
 
-    The implementor's `parse/1` method then dispatches, in order, the `parse/2` for every request name
-    defined in the implementor's `fields/0` function to build the request.
     """
-    defmacro field(name, do: body) do
+    defmacro field(name, input \\ :stream, do: body) do
       quote do
         body = unquote(body)
-        def parse(unquote(:"#{name}"), {:ok, _value, stream} = parse), do: unquote(body)
+        def parse(unquote(:"#{name}"), {:ok, _, unquote(to_string(argument))} = parse), do: unquote(body)
       end
     end
 
@@ -47,7 +57,8 @@ defmodule Liquid.TLS do
       {header, request} = :lists.split(4, stream)
     end
 
-    def parse(type, string) do
+    @spec parse(term, Keyword.t, String.t) :: parser()
+    def parse(type, opts \\ [], string) do
       dispatch = fn field, parser ->
         case parser do
           {:ok, current, _} ->
