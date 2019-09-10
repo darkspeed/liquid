@@ -54,14 +54,15 @@ defmodule Liquid.TLS do
 
     def parse(:record_layer, {:ok, _value, stream}) do
       <<handshake_byte, major, minor, length :: size(16), request :: binary>> = stream
-      case {handshake_byte, major, minor} do
-        {0x16, 3, 1} -> {:ok, [record_layer: [version: {major, minor}, length: length]], request}
-        {0x16, _, _} -> error :record_layer, "TLS Version 1.3 is required."
-        _ -> "Malformed record layer."
+      version_valid? = major == 3 && (minor >= 1 && minor <= 3)
+      case {handshake_byte, version_valid?} do
+        {0x16, true} -> {:ok, [record_layer: [version: {major, minor}, length: length]], request}
+        {0x16, false} -> error :record_layer, "TLS version >= 1.0 is required."
+        _ -> error :record_layer, "Malformed record layer."
       end
     end
 
-    @spec parse(term, parser(), input()) :: parser() def parse(type, opts \\ [], string) do
+    @spec parse(term, parser(), input()) :: parser()
     def parse(type, _opts \\ [], string) do
       dispatch = fn field, parser ->
         case parser do

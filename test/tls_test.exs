@@ -24,5 +24,11 @@ defmodule TLSTest do
       result = test_parse bad_request
       refute match?({:ok, _, _}, result)
     end
+
+    test "passes unparsed input through" do
+      request = <<0x16, 0x03, 0x01, 0x00, 0xa5, 0xFF, 0xFF>>
+      {_, _, remaining} = test_parse request
+      assert remaining == <<0xFF, 0xFF>>
+    end
   end
 end
