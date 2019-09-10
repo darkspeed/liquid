@@ -20,6 +20,11 @@ defmodule Liquid.TLS do
     @callback fields() :: [atom()]
 
     @typedoc """
+    Represents the remaining unparsed request.
+    """
+    @type input() :: bytes()
+
+    @typedoc """
     Represents a request parser. For parser combinators, this type more closely
     represents a 'parse result' rather than a 'parser object' that may be found
     in object-oriented libraries.
