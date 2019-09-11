@@ -16,7 +16,6 @@ defmodule Liquid.TLS do
       end
     end
 
-    @callback type() :: {atom(), byte()}
     @callback fields() :: [atom()]
 
     @typedoc """
@@ -45,20 +44,29 @@ defmodule Liquid.TLS do
       end
 
     """
-    defmacro field(name, input \\ :stream, do: body) do
-      quote do
-        body = unquote(body)
-        def parse(unquote(:"#{name}"), {:ok, _, unquote(to_string(input))} = parse), do: unquote(body)
+    defmacro field(name, stream \\ quote(do: _), body) do
+      stream = Macro.escape stream
+      body = Macro.escape body, unquote: true
+
+      quote bind_quoted: [name: name, stream: stream, body: body] do
+        def parse(unquote(:"#{name}"), {:ok, _, unquote(stream)}) do
+          try do
+            unquote(body)
+          rescue
+            MatchError -> {:error, [], "Error parsing field '#{to_string(unquote(name))}': Malformed input."}
+          end
+        end
       end
     end
 
     def parse(:record_layer, {:ok, _value, stream}) do
-      <<handshake_byte, major, minor, length :: size(16), request :: binary>> = stream
+      <<handshake_byte, major, minor, length::size(16), request::binary>> = stream
       version_valid? = major == 3 && (minor >= 1 && minor <= 3)
+
       case {handshake_byte, version_valid?} do
         {0x16, true} -> {:ok, [record_layer: [version: {major, minor}, length: length]], request}
-        {0x16, false} -> error :record_layer, "TLS version >= 1.0 is required."
-        _ -> error :record_layer, "Malformed record layer."
+        {0x16, false} -> {:error, [], "TLS version >= 1.0 is required."}
+        _ -> {:error, [], "Malformed record layer."}
       end
     end
 
@@ -79,8 +87,27 @@ defmodule Liquid.TLS do
       |> (&Enum.reduce(type.fields(), &1, dispatch)).()
     end
 
-    def error(field, description),
-      do: {:error, [], "Error parsing field '#{field}': #{description}"}
+  end
 
+  defmodule Request.ClientHello do
+    use Request
+
+    @handshake 1
+
+    @impl Request
+    def fields,
+      do: [
+        :handshake_header,
+        :client_version,
+        :client_random,
+        :session_id,
+        :cipher_suites,
+        :compression_methods
+    ]
+
+    field :handshake_header, stream do
+      <<@handshake, length :: size(24), remaining::binary>> = stream
+      {:ok, [handshake_type: @type, length: length], remaining}
+    end
   end
 end
