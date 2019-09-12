@@ -1,7 +1,7 @@
 defmodule TLSTest do
   use ExUnit.Case, async: true
 
-  import Liquid.TLS.Request
+  import Liquid.Request
 
   describe "request parsing" do
 <<<<<<< HEAD
@@ -48,6 +48,12 @@ defmodule TLSTest do
       result = test_parse bad_request
       refute match?({:ok, _, _}, result)
 >>>>>>> Define record layer parsing function and tests
+    end
+
+    test "client hello handshake header" do
+      handshake_header = <<1, 0, 0, 0xA1>>
+      result = Liquid.Request.ClientHello.parse(:handshake_header, {:ok, [], handshake_header})
+      assert result == {:ok, [handshake_type: 1, length: 161], ""}
     end
   end
 end
