@@ -32,12 +32,12 @@ defmodule Liquid.Requests do
     end
 
     field :client_random, stream do
-      <<random :: size(256), request :: binary>> = stream
+      <<random::size(256), request::binary>> = stream
       {:ok, [random: random], request}
     end
 
     field :session_id, stream do
-      <<id, request :: binary>> = stream
+      <<id, request::binary>> = stream
       {:ok, [id: id], request}
     end
   end
