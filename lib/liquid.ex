@@ -8,11 +8,10 @@ defmodule Liquid do
   require Logger
 
   def start(_type, opts) do
-    Logger.debug("Starting Liquid supervisor...")
-    {mode, opts} = Keyword.pop(opts, :mode, :client)
-    case mode do
-      :client -> Logger.debug("Liquid Client mode")
-      _ -> raise ArgumentError, "Liquid must start in client or server mode."
-    end
+    children = []
+
+    {mode, opts} = Keyword.pop(opts, :mode, :info)
+
+    Supervisor.start_link(children, [strategy: :one_for_one])
   end
 end

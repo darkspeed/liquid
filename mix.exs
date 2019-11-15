@@ -5,6 +5,10 @@ defmodule Liquid.MixProject do
     [
       app: :liquid,
       version: "0.1.0",
+      description: """
+      Pluggable proxy obfuscation designed to counteract
+      deep packet inspection and advanced fingerprinting techniques.
+      """,
       elixir: "~> 1.9",
       start_permanent: Mix.env() == :prod,
       deps: deps()
