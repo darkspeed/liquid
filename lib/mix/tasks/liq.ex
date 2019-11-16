@@ -18,7 +18,7 @@ defmodule Mix.Tasks.Liq do
     Application.ensure_all_started(:liquid)
     Mix.shell().info(IO.ANSI.format([:blue, "Liquid Proxy ", :reset, "v#{Application.spec(:liquid, :vsn)}"]))
     Mix.shell().info(Application.spec(:liquid, :description))
-    Mix.shell().info([IO.ANSI.bright(), "Availible tasks:"])
+    Mix.shell().info(IO.ANSI.format([:green, "Availible tasks: \n"]))
     Mix.Tasks.Help.run(["--search", "liq."])
   end
 end
